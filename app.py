@@ -33,7 +33,7 @@ def compute_stage(t: str, n: str, m: str) -> str:
 def detect(image):
     """Run binary classification; show staging panel only if cancer detected."""
     if image is None:
-        return "Please upload an image.", gr.update(visible=False)
+        return "Please upload an image.", gr.Group(visible=False)
 
     results = binary_clf(image)
     top = max(results, key=lambda x: x["score"])
@@ -55,7 +55,7 @@ def detect(image):
             "No malignancy detected in this histopathological image."
         )
 
-    return msg, gr.update(visible=is_cancer)
+    return msg, gr.Group(visible=is_cancer)
 
 
 def stage(t_val: str, n_val: str, m_val: str) -> str:
