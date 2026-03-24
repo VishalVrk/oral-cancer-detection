@@ -1,16 +1,18 @@
 import gradio as gr
+import torch
 from transformers import pipeline
 
 # ── Binary classifier ─────────────────────────────────────────────────────────
-# Model: ConvNextV2 fine-tuned on oral histopathology (oral_normal vs oral_scc)
-# Labels: "oral_normal" = healthy tissue, "oral_scc" = Oral Squamous Cell Carcinoma
 MODEL_ID = "momogueye7/oral_cancer_detection"
 
-binary_clf = pipeline("image-classification", model=MODEL_ID)
+binary_clf = pipeline(
+    "image-classification",
+    model=MODEL_ID,
+    device="cuda" if torch.cuda.is_available() else "cpu"
+)
 
 # ── TNM staging rule engine (pure Python, no ML) ──────────────────────────────
 def compute_stage(t: str, n: str, m: str) -> str:
-    """Map T/N/M codes to AJCC clinical stage per oral cavity cancer guidelines."""
     if m == "M1":
         return "Stage IVC\nDistant metastasis present. Any T, Any N, M1."
     if t == "T4b":
@@ -31,7 +33,6 @@ def compute_stage(t: str, n: str, m: str) -> str:
 
 
 def detect(image):
-    """Run binary classification; show staging panel only if cancer detected."""
     if image is None:
         return "Please upload an image.", gr.update(visible=False)
 
@@ -40,18 +41,17 @@ def detect(image):
     label = top["label"].upper()
     score = top["score"]
 
-    # Model labels: "oral_normal" (healthy) or "oral_scc" (squamous cell carcinoma)
     is_cancer = "SCC" in label
 
     if is_cancer:
         msg = (
-            f"CANCER DETECTED  (confidence: {score:.1%})\n\n"
+            f"⚠️ CANCER DETECTED  (confidence: {score:.1%})\n\n"
             "Oral Squamous Cell Carcinoma identified in the histopathological image.\n"
             "Please enter clinical T, N, M values below to compute the AJCC stage."
         )
     else:
         msg = (
-            f"NORMAL TISSUE  (confidence: {score:.1%})\n\n"
+            f"✅ NORMAL TISSUE  (confidence: {score:.1%})\n\n"
             "No malignancy detected in this histopathological image."
         )
 
@@ -59,7 +59,6 @@ def detect(image):
 
 
 def stage(t_val: str, n_val: str, m_val: str) -> str:
-    """Extract T/N/M codes from dropdown labels and compute stage."""
     t = t_val.split(" —")[0].strip()
     n = n_val.split(" —")[0].strip()
     m = m_val.split(" —")[0].strip()
@@ -96,7 +95,7 @@ M_CHOICES = [
 with gr.Blocks(title="Oral Cancer Detection & Staging", theme=gr.themes.Soft()) as demo:
 
     gr.Markdown("""
-    # Oral Cancer Detection & TNM Staging
+    # 🔬 Oral Cancer Detection & TNM Staging
     Upload a **histopathological image** (H&E stained oral tissue) for binary cancer detection.
     If cancer is identified, enter clinical TNM values to compute the **AJCC stage**.
     """)
@@ -104,7 +103,7 @@ with gr.Blocks(title="Oral Cancer Detection & Staging", theme=gr.themes.Soft()) 
     with gr.Row():
         with gr.Column(scale=1):
             image_input = gr.Image(type="pil", label="Histopathological Image")
-            analyze_btn = gr.Button("Analyze Image", variant="primary", size="lg")
+            analyze_btn = gr.Button("🔍 Analyze Image", variant="primary", size="lg")
         with gr.Column(scale=1):
             detection_output = gr.Textbox(
                 label="Detection Result", lines=6, interactive=False
@@ -112,34 +111,24 @@ with gr.Blocks(title="Oral Cancer Detection & Staging", theme=gr.themes.Soft()) 
 
     with gr.Group(visible=False) as staging_panel:
         gr.Markdown("---\n### TNM Staging — Enter Clinical Values")
-        gr.Markdown(
-            "Based on **clinical examination, imaging (CT/MRI), and biopsy** findings:"
-        )
+        gr.Markdown("Based on **clinical examination, imaging (CT/MRI), and biopsy** findings:")
         with gr.Row():
-            t_input = gr.Dropdown(
-                choices=T_CHOICES, value=T_CHOICES[2], label="T — Tumor Size / Extent"
-            )
-            n_input = gr.Dropdown(
-                choices=N_CHOICES, value=N_CHOICES[0], label="N — Regional Lymph Nodes"
-            )
-            m_input = gr.Dropdown(
-                choices=M_CHOICES, value=M_CHOICES[0], label="M — Distant Metastasis"
-            )
-        stage_btn = gr.Button("Compute Stage", variant="secondary")
-        stage_output = gr.Textbox(
-            label="Stage Classification Result", lines=5, interactive=False
-        )
+            t_input = gr.Dropdown(choices=T_CHOICES, value=T_CHOICES[2], label="T — Tumor Size / Extent")
+            n_input = gr.Dropdown(choices=N_CHOICES, value=N_CHOICES[0], label="N — Regional Lymph Nodes")
+            m_input = gr.Dropdown(choices=M_CHOICES, value=M_CHOICES[0], label="M — Distant Metastasis")
+        stage_btn = gr.Button("📊 Compute Stage", variant="secondary")
+        stage_output = gr.Textbox(label="Stage Classification Result", lines=5, interactive=False)
 
     gr.Markdown(
         "---\n"
         "*Disclaimer: This tool is for **educational purposes only** and must not be used for clinical diagnosis.*"
     )
 
-    # ── Event wiring ───────────────────────────────────────────────────────────
     analyze_btn.click(
         fn=detect,
         inputs=image_input,
         outputs=[detection_output, staging_panel],
+        api_name=False,
     )
     stage_btn.click(
         fn=stage,
@@ -147,4 +136,9 @@ with gr.Blocks(title="Oral Cancer Detection & Staging", theme=gr.themes.Soft()) 
         outputs=stage_output,
     )
 
-demo.launch()
+demo.launch(
+    server_name="0.0.0.0",
+    server_port=7860,
+    share=False,
+    show_error=True,
+)
