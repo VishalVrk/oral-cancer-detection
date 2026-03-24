@@ -4,9 +4,9 @@ emoji: 🔬
 colorFrom: blue
 colorTo: red
 sdk: gradio
-sdk_version: "6.9.0"
-python_version: "3.11"
+sdk_version: 5.42.0          # ← Stable version that avoids HfFolder + 6.x issues
 app_file: app.py
+python_version: "3.11"
 pinned: false
 license: mit
 tags:
