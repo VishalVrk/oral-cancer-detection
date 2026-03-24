@@ -140,6 +140,7 @@ with gr.Blocks(title="Oral Cancer Detection & Staging", theme=gr.themes.Soft()) 
         fn=detect,
         inputs=image_input,
         outputs=[detection_output, staging_panel],
+        api_name=False,
     )
     stage_btn.click(
         fn=stage,
@@ -147,4 +148,4 @@ with gr.Blocks(title="Oral Cancer Detection & Staging", theme=gr.themes.Soft()) 
         outputs=stage_output,
     )
 
-demo.launch()
+demo.launch(server_name="0.0.0.0")
