@@ -1,5 +1,4 @@
 import gradio as gr
-import torch
 from transformers import pipeline
 
 # Load model at startup (do this once)
