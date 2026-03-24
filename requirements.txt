@@ -1,6 +1,6 @@
+gradio>=5.0.0
 transformers>=4.40.0
 torch>=2.0.0
+torchvision>=0.15.0
 Pillow>=9.0.0
 accelerate>=0.20.0
-audioop-lts; python_version >= "3.13"
-huggingface-hub>=0.30,<1.0
