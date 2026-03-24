@@ -6,7 +6,13 @@ from transformers import pipeline
 # Labels: "oral_normal" = healthy tissue, "oral_scc" = Oral Squamous Cell Carcinoma
 MODEL_ID = "momogueye7/oral_cancer_detection"
 
-binary_clf = pipeline("image-classification", model=MODEL_ID)
+binary_clf = None
+
+def get_classifier():
+    global binary_clf
+    if binary_clf is None:
+        binary_clf = pipeline("image-classification", model=MODEL_ID)
+    return binary_clf
 
 # ── TNM staging rule engine (pure Python, no ML) ──────────────────────────────
 def compute_stage(t: str, n: str, m: str) -> str:
@@ -35,7 +41,7 @@ def detect(image):
     if image is None:
         return "Please upload an image.", gr.update(visible=False)
 
-    results = binary_clf(image)
+    results = get_classifier()(image)
     top = max(results, key=lambda x: x["score"])
     label = top["label"].upper()
     score = top["score"]
