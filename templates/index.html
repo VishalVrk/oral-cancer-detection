@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oral Cancer Detection & Staging</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 min-h-screen">
+
+  <!-- Header -->
+  <header class="bg-slate-900 text-white">
+    <div class="max-w-4xl mx-auto px-6 py-5 flex items-center gap-4">
+      <div class="bg-blue-500 p-2.5 rounded-xl">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="font-bold text-lg leading-tight">Oral Cancer Detection & TNM Staging</h1>
+        <p class="text-slate-400 text-sm">AI-powered histopathological analysis · For educational use only</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto px-6 py-10 space-y-6">
+
+    <!-- Step 1: Upload -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="px-7 py-5 border-b border-slate-100 flex items-center gap-3">
+        <span class="bg-blue-100 text-blue-700 text-xs font-bold px-2.5 py-1 rounded-full">STEP 1</span>
+        <h2 class="font-semibold text-slate-800">Upload Histopathological Image</h2>
+      </div>
+      <div class="px-7 py-7">
+        <div id="dropZone"
+          class="border-2 border-dashed border-slate-200 rounded-xl p-10 text-center cursor-pointer
+                 hover:border-blue-400 hover:bg-blue-50 transition-all duration-200"
+          onclick="document.getElementById('fileInput').click()"
+          ondragover="event.preventDefault()"
+          ondrop="handleDrop(event)">
+          <input type="file" id="fileInput" class="hidden" accept="image/*" onchange="handleFile(event)" />
+          <div id="uploadPrompt">
+            <svg class="mx-auto w-10 h-10 text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14
+                   m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+            <p class="text-slate-500 font-medium">Drop image here or <span class="text-blue-500">click to browse</span></p>
+            <p class="text-slate-400 text-sm mt-1">H&amp;E stained oral tissue slide · JPG or PNG</p>
+          </div>
+          <div id="imagePreview" class="hidden">
+            <img id="previewImg" class="mx-auto max-h-52 rounded-lg shadow object-contain" src="" alt="Preview"/>
+            <p id="fileName" class="text-slate-400 text-sm mt-3"></p>
+          </div>
+        </div>
+
+        <button id="analyzeBtn" onclick="analyzeImage()" disabled
+          class="mt-5 w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed
+                 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2">
+          <svg id="spinIcon" class="hidden w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+          </svg>
+          <span id="btnText">Analyze Image</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Detection Result -->
+    <div id="resultCard" class="hidden bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="px-7 py-5 border-b border-slate-100 flex items-center gap-3">
+        <span class="bg-slate-100 text-slate-600 text-xs font-bold px-2.5 py-1 rounded-full">RESULT</span>
+        <h2 class="font-semibold text-slate-800">Detection Result</h2>
+      </div>
+      <div class="px-7 py-7">
+
+        <!-- Cancer -->
+        <div id="cancerBanner" class="hidden flex items-start gap-4 p-5 bg-red-50 border border-red-200 rounded-xl">
+          <div class="bg-red-100 rounded-full p-2 shrink-0">
+            <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+          </div>
+          <div class="flex-1">
+            <p class="font-bold text-red-800 text-base">Cancer Detected — Oral Squamous Cell Carcinoma (OSCC)</p>
+            <p class="text-red-600 text-sm mt-1">Please enter clinical TNM values below to determine the stage.</p>
+            <div class="mt-4 flex items-center gap-3">
+              <span class="text-sm text-slate-500 shrink-0">Confidence</span>
+              <div class="flex-1 bg-red-100 rounded-full h-2">
+                <div id="cancerBar" class="bg-red-500 h-2 rounded-full transition-all duration-700" style="width:0%"></div>
+              </div>
+              <span id="cancerScore" class="text-red-700 font-bold text-sm w-12 text-right"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Normal -->
+        <div id="normalBanner" class="hidden flex items-start gap-4 p-5 bg-green-50 border border-green-200 rounded-xl">
+          <div class="bg-green-100 rounded-full p-2 shrink-0">
+            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+          </div>
+          <div class="flex-1">
+            <p class="font-bold text-green-800 text-base">Normal Tissue — No Malignancy Detected</p>
+            <p class="text-green-600 text-sm mt-1">No oral squamous cell carcinoma identified in this image.</p>
+            <div class="mt-4 flex items-center gap-3">
+              <span class="text-sm text-slate-500 shrink-0">Confidence</span>
+              <div class="flex-1 bg-green-100 rounded-full h-2">
+                <div id="normalBar" class="bg-green-500 h-2 rounded-full transition-all duration-700" style="width:0%"></div>
+              </div>
+              <span id="normalScore" class="text-green-700 font-bold text-sm w-12 text-right"></span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Step 2: TNM Staging -->
+    <div id="stagingCard" class="hidden bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="px-7 py-5 border-b border-slate-100 flex items-center gap-3">
+        <span class="bg-blue-100 text-blue-700 text-xs font-bold px-2.5 py-1 rounded-full">STEP 2</span>
+        <h2 class="font-semibold text-slate-800">TNM Staging</h2>
+        <span class="text-slate-400 text-sm">— Based on clinical examination, CT/MRI &amp; biopsy</span>
+      </div>
+      <div class="px-7 py-7 space-y-6">
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">T — Tumor</label>
+            <select id="tSelect" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-700
+                                        focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white">
+              <option value="T0">T0 — No evidence of tumor</option>
+              <option value="Tis">Tis — Carcinoma in situ</option>
+              <option value="T1" selected>T1 — ≤2 cm</option>
+              <option value="T2">T2 — 2–4 cm</option>
+              <option value="T3">T3 — &gt;4 cm</option>
+              <option value="T4a">T4a — Resectable invasion</option>
+              <option value="T4b">T4b — Unresectable invasion</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">N — Nodes</label>
+            <select id="nSelect" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-700
+                                        focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white">
+              <option value="N0" selected>N0 — No nodal metastasis</option>
+              <option value="N1">N1 — Single ipsilateral ≤3 cm</option>
+              <option value="N2">N2 — 3–6 cm / multiple</option>
+              <option value="N3">N3 — &gt;6 cm / extranodal</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">M — Metastasis</label>
+            <select id="mSelect" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-700
+                                        focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white">
+              <option value="M0" selected>M0 — No distant metastasis</option>
+              <option value="M1">M1 — Distant metastasis</option>
+            </select>
+          </div>
+        </div>
+
+        <button onclick="computeStage()"
+          class="w-full bg-slate-800 hover:bg-slate-900 text-white font-semibold py-3 rounded-xl
+                 transition-colors flex items-center justify-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2
+                 a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+          </svg>
+          Compute Stage
+        </button>
+
+        <!-- Stage Result -->
+        <div id="stageResult" class="hidden rounded-xl border-2 p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">AJCC Classification</p>
+              <p id="stageName" class="text-3xl font-black"></p>
+              <p id="stageTNM" class="text-slate-400 text-sm mt-1"></p>
+            </div>
+            <div id="stageBadge"
+              class="w-16 h-16 rounded-2xl flex items-center justify-center text-white font-black text-base shadow-lg">
+            </div>
+          </div>
+          <p id="stageDesc" class="mt-5 text-slate-600 text-sm leading-relaxed pt-5 border-t border-slate-100"></p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Collapsible Reference Table -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <button onclick="toggleTable()"
+        class="w-full px-7 py-5 flex items-center justify-between text-left hover:bg-slate-50 transition-colors">
+        <div class="flex items-center gap-3">
+          <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M3 10h18M3 14h18M10 6h4M10 18h4"/>
+          </svg>
+          <span class="font-semibold text-slate-700 text-sm">TNM Staging Reference Table</span>
+        </div>
+        <svg id="chevron" class="w-4 h-4 text-slate-400 transition-transform duration-200"
+          fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </button>
+      <div id="refTable" class="hidden border-t border-slate-100">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-slate-50">
+              <tr>
+                <th class="text-left py-3 px-6 font-semibold text-slate-500 text-xs uppercase tracking-wider">Stage</th>
+                <th class="text-left py-3 px-6 font-semibold text-slate-500 text-xs uppercase tracking-wider">TNM Criteria</th>
+                <th class="text-left py-3 px-6 font-semibold text-slate-500 text-xs uppercase tracking-wider">Differentiation</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-50">
+              <tr class="hover:bg-slate-50/50"><td class="py-3 px-6 font-medium text-slate-700">Stage 0</td><td class="py-3 px-6 text-slate-500">T0/Tis, N0, M0</td><td class="py-3 px-6 text-slate-400">—</td></tr>
+              <tr class="hover:bg-slate-50/50"><td class="py-3 px-6 font-medium text-slate-700">Stage I</td><td class="py-3 px-6 text-slate-500">T1, N0, M0</td><td class="py-3 px-6 text-slate-400">Grade 1 — Well differentiated</td></tr>
+              <tr class="hover:bg-slate-50/50"><td class="py-3 px-6 font-medium text-slate-700">Stage II</td><td class="py-3 px-6 text-slate-500">T2, N0, M0</td><td class="py-3 px-6 text-slate-400">Grade 1 — Well differentiated</td></tr>
+              <tr class="hover:bg-slate-50/50"><td class="py-3 px-6 font-medium text-slate-700">Stage III</td><td class="py-3 px-6 text-slate-500">T3 N0 M0 or T1–T3 N1 M0</td><td class="py-3 px-6 text-slate-400">Grade 2 — Moderately differentiated</td></tr>
+              <tr class="hover:bg-slate-50/50"><td class="py-3 px-6 font-medium text-slate-700">Stage IVA</td><td class="py-3 px-6 text-slate-500">T4a N0–N1 M0 or T1–T4a N2 M0</td><td class="py-3 px-6 text-slate-400">Grade 2 — Moderately differentiated</td></tr>
+              <tr class="hover:bg-slate-50/50"><td class="py-3 px-6 font-medium text-slate-700">Stage IVB</td><td class="py-3 px-6 text-slate-500">Any T N3 M0 or T4b Any N M0</td><td class="py-3 px-6 text-slate-400">Grade 3 — Poorly differentiated</td></tr>
+              <tr class="hover:bg-slate-50/50"><td class="py-3 px-6 font-medium text-slate-700">Stage IVC</td><td class="py-3 px-6 text-slate-500">Any T, Any N, M1</td><td class="py-3 px-6 text-slate-400">Grade 3 — Poorly differentiated</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="text-center py-8 text-slate-400 text-xs border-t border-slate-100 mt-4">
+    For educational purposes only &mdash; not for clinical diagnosis
+  </footer>
+
+  <script>
+    let selectedFile = null;
+
+    function handleDrop(e) {
+      e.preventDefault();
+      const f = e.dataTransfer.files[0];
+      if (f && f.type.startsWith('image/')) loadPreview(f);
+    }
+
+    function handleFile(e) {
+      const f = e.target.files[0];
+      if (f) loadPreview(f);
+    }
+
+    function loadPreview(file) {
+      selectedFile = file;
+      const reader = new FileReader();
+      reader.onload = e => {
+        document.getElementById('previewImg').src = e.target.result;
+        document.getElementById('fileName').textContent = file.name;
+        document.getElementById('uploadPrompt').classList.add('hidden');
+        document.getElementById('imagePreview').classList.remove('hidden');
+        document.getElementById('analyzeBtn').disabled = false;
+        document.getElementById('resultCard').classList.add('hidden');
+        document.getElementById('stagingCard').classList.add('hidden');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function analyzeImage() {
+      if (!selectedFile) return;
+      const btn = document.getElementById('analyzeBtn');
+      btn.disabled = true;
+      document.getElementById('spinIcon').classList.remove('hidden');
+      document.getElementById('btnText').textContent = 'Analyzing…';
+
+      const fd = new FormData();
+      fd.append('image', selectedFile);
+
+      try {
+        const res = await fetch('/detect', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (data.error) { alert('Error: ' + data.error); return; }
+
+        document.getElementById('resultCard').classList.remove('hidden');
+        document.getElementById('cancerBanner').classList.add('hidden');
+        document.getElementById('normalBanner').classList.add('hidden');
+
+        if (data.is_cancer) {
+          document.getElementById('cancerBanner').classList.remove('hidden');
+          setTimeout(() => document.getElementById('cancerBar').style.width = data.confidence + '%', 100);
+          document.getElementById('cancerScore').textContent = data.confidence + '%';
+          document.getElementById('stagingCard').classList.remove('hidden');
+        } else {
+          document.getElementById('normalBanner').classList.remove('hidden');
+          setTimeout(() => document.getElementById('normalBar').style.width = data.confidence + '%', 100);
+          document.getElementById('normalScore').textContent = data.confidence + '%';
+          document.getElementById('stagingCard').classList.add('hidden');
+        }
+        document.getElementById('stageResult').classList.add('hidden');
+      } catch (err) {
+        alert('Request failed. Please try again.');
+      } finally {
+        btn.disabled = false;
+        document.getElementById('spinIcon').classList.add('hidden');
+        document.getElementById('btnText').textContent = 'Analyze Image';
+        document.getElementById('analyzeBtn').disabled = false;
+      }
+    }
+
+    async function computeStage() {
+      const t = document.getElementById('tSelect').value;
+      const n = document.getElementById('nSelect').value;
+      const m = document.getElementById('mSelect').value;
+      const res = await fetch('/stage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ t, n, m })
+      });
+      const data = await res.json();
+
+      const colors = {
+        green:  { bg: 'bg-green-50',  border: 'border-green-200',  text: 'text-green-800',  badge: 'bg-green-500' },
+        yellow: { bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-800', badge: 'bg-yellow-400' },
+        orange: { bg: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-800', badge: 'bg-orange-500' },
+        red:    { bg: 'bg-red-50',    border: 'border-red-200',    text: 'text-red-800',    badge: 'bg-red-600'   },
+      };
+      const c = colors[data.color] || colors.orange;
+      const el = document.getElementById('stageResult');
+
+      el.className = `rounded-xl border-2 p-6 ${c.bg} ${c.border}`;
+      document.getElementById('stageName').className = `text-3xl font-black ${c.text}`;
+      document.getElementById('stageName').textContent = data.stage;
+      document.getElementById('stageTNM').textContent = 'TNM: ' + data.tnm;
+      document.getElementById('stageDesc').textContent = data.description;
+      const badge = document.getElementById('stageBadge');
+      badge.className = `w-16 h-16 rounded-2xl flex items-center justify-center text-white font-black text-sm shadow-lg ${c.badge}`;
+      badge.textContent = data.stage.replace('Stage ', '');
+      el.classList.remove('hidden');
+    }
+
+    function toggleTable() {
+      const t = document.getElementById('refTable');
+      const ch = document.getElementById('chevron');
+      t.classList.toggle('hidden');
+      ch.style.transform = t.classList.contains('hidden') ? '' : 'rotate(180deg)';
+    }
+  </script>
+
+</body>
+</html>
